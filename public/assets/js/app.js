@@ -191,6 +191,19 @@
     cache.clear();
   }
 
+  /**
+   * Saída do app para uma navegação de página inteira (o fluxo de OAuth).
+   * Isolado num ponto só para que o build estático de demonstração — que roda
+   * sem servidor — possa interceptar em vez de sair da página.
+   */
+  function redirect(url) {
+    if (typeof window.__avancyRedirect === 'function') {
+      window.__avancyRedirect(url);
+      return;
+    }
+    window.location.href = url;
+  }
+
   function setState(patch) {
     var resetScroll =
       ('screen' in patch && patch.screen !== state.screen) ||
@@ -745,7 +758,7 @@
     switch (el.dataset.action) {
       case 'connect':
         setState({ connecting: true });
-        window.location.href = '/auth/instagram';
+        redirect('/auth/instagram');
         break;
 
       case 'disconnect':

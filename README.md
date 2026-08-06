@@ -20,6 +20,24 @@ para dados reais é uma variável de ambiente — ver
 
 Para desenvolvimento com reload automático: `npm run dev`.
 
+## Build de demonstração
+
+Para apresentar sem depender de hospedagem, dá para gerar um HTML único que
+roda sem servidor:
+
+```bash
+npm start                      # noutro terminal, em modo mock
+node scripts/build-demo.js     # gera demo/avancy-demo.html
+```
+
+O script **captura as respostas reais da API** rodando em modo simulado e as
+congela dentro do arquivo, junto com uma camada que substitui o servidor
+(intercepta `fetch` e a navegação do OAuth). É o mesmo frontend, sem
+reimplementação — se a fórmula do score mudar, basta gerar de novo.
+
+Serve para apresentar. Não substitui o app: não há login real, os dados não
+mudam, e nada disso fala com o Instagram.
+
 ## Colocando no ar
 
 O repositório já vem configurado para Render (`render.yaml`), Fly.io
