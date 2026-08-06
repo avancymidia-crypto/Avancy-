@@ -51,27 +51,55 @@ function sign(value) {
   return crypto.createHmac('sha256', config.sessionSecret).update(value).digest('base64url');
 }
 
-function serialize(id) {
-  return `${id}.${sign(id)}`;
+/**
+ * O cookie tem dois formatos, ambos assinados:
+ *
+ *   i:<id>.<assinatura>       sessão real — os dados (incluindo os tokens da
+ *                             Meta) ficam no servidor, o cookie só aponta
+ *   s:<payload>.<assinatura>  sessão simulada — não há segredo nenhum para
+ *                             proteger, então cabe inteira no cookie
+ *
+ * O segundo formato existe porque a sessão simulada precisa sobreviver a um
+ * restart do servidor: em hospedagem que hiberna por inatividade, uma sessão
+ * só em memória desconectaria o usuário a cada vez que o app acordasse.
+ */
+function serialize(kind, body) {
+  const value = `${kind}:${body}`;
+  return `${value}.${sign(value)}`;
 }
 
-/** Devolve o id se a assinatura conferir, senão null. */
+/** Devolve `{ kind, body }` se a assinatura conferir, senão null. */
 function parse(raw) {
   if (typeof raw !== 'string') return null;
 
   const dot = raw.lastIndexOf('.');
   if (dot <= 0) return null;
 
-  const id = raw.slice(0, dot);
+  const value = raw.slice(0, dot);
   const signature = raw.slice(dot + 1);
-  const expected = sign(id);
+  const expected = sign(value);
 
   // Comparação em tempo constante — evita vazar a assinatura por timing.
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
 
-  return id;
+  const colon = value.indexOf(':');
+  if (colon === -1) return null;
+
+  return { kind: value.slice(0, colon), body: value.slice(colon + 1) };
+}
+
+function encodeStateless(data) {
+  return Buffer.from(JSON.stringify(data), 'utf8').toString('base64url');
+}
+
+function decodeStateless(body) {
+  try {
+    return JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
 }
 
 function readCookie(req, name) {
@@ -93,23 +121,40 @@ function readCookie(req, name) {
  * `req.startSession(data)` / `req.destroySession()`.
  */
 export function sessionMiddleware(req, res, next) {
-  const id = parse(readCookie(req, COOKIE_NAME));
-  req.sessionId = id;
-  req.session = id ? store.get(id) : null;
+  const cookie = parse(readCookie(req, COOKIE_NAME));
+
+  req.sessionId = null;
+  req.session = null;
+
+  if (cookie?.kind === 's') {
+    req.session = decodeStateless(cookie.body);
+  } else if (cookie?.kind === 'i') {
+    req.sessionId = cookie.body;
+    req.session = store.get(cookie.body);
+  }
+
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: config.isProduction,
+    maxAge: config.sessionTtlMs,
+    path: '/'
+  };
 
   req.startSession = (data) => {
+    req.session = data;
+
+    if (data.simulated) {
+      // Sem token para proteger: a sessão inteira vai no cookie assinado.
+      req.sessionId = null;
+      res.cookie(COOKIE_NAME, serialize('s', encodeStateless(data)), cookieOptions);
+      return data;
+    }
+
     const newId = crypto.randomBytes(24).toString('base64url');
     store.set(newId, data);
     req.sessionId = newId;
-    req.session = data;
-
-    res.cookie(COOKIE_NAME, serialize(newId), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: config.isProduction,
-      maxAge: config.sessionTtlMs,
-      path: '/'
-    });
+    res.cookie(COOKIE_NAME, serialize('i', newId), cookieOptions);
     return data;
   };
 

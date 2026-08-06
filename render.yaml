@@ -1,0 +1,30 @@
+# Blueprint do Render. Em render.com: New > Blueprint, e aponte para este repo.
+services:
+  - type: web
+    name: avancy-app
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Gerado uma vez pelo Render e mantido entre deploys. É o que faz a
+      # sessão sobreviver quando a instância hiberna e acorda.
+      - key: SESSION_SECRET
+        generateValue: true
+
+      # Troque para "instagram" depois que a Meta aprovar o App Review.
+      - key: DATA_PROVIDER
+        value: mock
+
+      # PUBLIC_URL não precisa ser definido: o app usa RENDER_EXTERNAL_URL.
+      # As credenciais da Meta ficam em branco de propósito — preencha pelo
+      # painel do Render, nunca aqui no repositório.
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false

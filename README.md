@@ -20,6 +20,16 @@ para dados reais é uma variável de ambiente — ver
 
 Para desenvolvimento com reload automático: `npm run dev`.
 
+## Colocando no ar
+
+O repositório já vem configurado para Render (`render.yaml`), Fly.io
+(`fly.toml` + `Dockerfile`) e Railway (`railway.json`). O caminho mais rápido e
+sem custo é o Render, ligado direto ao GitHub. Passo a passo e comparação das
+três em [docs/deploy.md](docs/deploy.md).
+
+HTTPS não é detalhe: sem ele o navegador não registra o service worker nem
+oferece a instalação. As três plataformas dão certificado de graça.
+
 ## Instalando no celular
 
 Abra a URL no navegador do celular e use *Adicionar à Tela de Início* (iOS,
@@ -126,9 +136,12 @@ Honestidade sobre o estado atual:
 
 - **Os números são simulados** até o App Review da Meta ser aprovado. O app
   mostra um aviso em todas as telas enquanto estiver nesse modo.
-- **As sessões vivem em memória.** Reiniciar o servidor desconecta todo mundo,
-  e não funciona com mais de uma instância. `server/session.js` isola isso
-  atrás de get/set/delete — trocar por Redis ou banco é pontual.
+- **As sessões reais vivem em memória.** As simuladas ficam no próprio cookie
+  assinado e sobrevivem a restart — por isso o app continua conectado quando a
+  hospedagem hiberna. As reais, que carregam os tokens da Meta, não podem ir
+  para o cookie: um deploy desconecta quem estiver logado, e não funciona com
+  mais de uma instância. `server/session.js` isola isso atrás de
+  get/set/delete — trocar por Redis é pontual.
 - **Notificações push não existem.** A linha em Ajustes é enfeite; push real
   exige Web Push com chaves VAPID e um serviço de entrega.
 - **"Relatório mensal por e-mail" também é enfeite.** Não há envio implementado.

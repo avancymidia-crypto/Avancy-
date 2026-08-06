@@ -48,7 +48,22 @@ const env = process.env;
 const dataProvider = env.DATA_PROVIDER === 'instagram' ? 'instagram' : 'mock';
 
 const port = Number(env.PORT) || 3000;
-const publicUrl = (env.PUBLIC_URL || `http://localhost:${port}`).replace(/\/$/, '');
+
+/**
+ * URL pública do app. As plataformas de hospedagem expõem a delas por
+ * variável de ambiente, então na maioria dos casos não é preciso configurar
+ * PUBLIC_URL na mão — o que evita o erro mais comum do OAuth, que é o
+ * redirect_uri não bater com o cadastrado na Meta.
+ */
+function detectPublicUrl() {
+  if (env.PUBLIC_URL) return env.PUBLIC_URL;
+  if (env.RENDER_EXTERNAL_URL) return env.RENDER_EXTERNAL_URL;
+  if (env.RAILWAY_PUBLIC_DOMAIN) return `https://${env.RAILWAY_PUBLIC_DOMAIN}`;
+  if (env.FLY_APP_NAME) return `https://${env.FLY_APP_NAME}.fly.dev`;
+  return `http://localhost:${port}`;
+}
+
+const publicUrl = detectPublicUrl().replace(/\/$/, '');
 
 export const config = {
   rootDir,
@@ -86,10 +101,10 @@ export function validateConfig() {
   if (config.dataProvider === 'instagram') {
     if (!config.meta.appId) problems.push('META_APP_ID não definido');
     if (!config.meta.appSecret) problems.push('META_APP_SECRET não definido');
-    if (!env.PUBLIC_URL) {
+    if (config.publicUrl.startsWith('http://localhost')) {
       problems.push(
-        'PUBLIC_URL não definido — o redirect_uri do OAuth precisa bater ' +
-        'exatamente com o cadastrado no painel da Meta'
+        'PUBLIC_URL aponta para localhost — a Meta não aceita. Use a URL ' +
+        'pública com https, e cadastre-a como redirect_uri no painel do app'
       );
     }
   }
