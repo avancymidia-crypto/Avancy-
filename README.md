@@ -1,74 +1,143 @@
 # Avancy · app mobile
 
-Protótipo navegável do app mobile da **Avancy Mídia** — um painel de métricas do
-Instagram para contas profissionais.
+Painel de métricas do Instagram para contas profissionais. PWA instalável, com
+backend próprio que fala com a Instagram Graph API.
 
-Implementação da peça `Avancy App.dc.html`, criada no Claude Design.
+Feito a partir da peça `Avancy App.dc.html`, criada no Claude Design.
 
 ## Rodando
 
-Não há build. Qualquer servidor estático serve:
-
 ```bash
-python3 -m http.server 8000
-# http://localhost:8000
+npm install
+npm start
+# http://localhost:3000
 ```
 
-Abrir o `index.html` direto pelo `file://` também funciona, mas um servidor é
-preferível para que as fontes carreguem sem avisos de CORS.
+Sobe em modo **simulado**: a conexão com o Instagram é fingida e os números são
+de exemplo, para dar para usar o app inteiro sem credencial nenhuma. Trocar
+para dados reais é uma variável de ambiente — ver
+[docs/meta-app-setup.md](docs/meta-app-setup.md).
+
+Para desenvolvimento com reload automático: `npm run dev`.
+
+## Instalando no celular
+
+Abra a URL no navegador do celular e use *Adicionar à Tela de Início* (iOS,
+pelo botão de compartilhar) ou *Instalar app* (Android/Chrome). O app abre em
+tela cheia, sem barra de navegador, e continua funcionando offline com os
+últimos dados carregados.
+
+No Android, quando o navegador oferece a instalação, aparece também um botão
+**Instalar na tela de início** dentro de Ajustes.
 
 ## Telas
 
-| Tela | Descrição |
+| Tela | O que mostra |
 | --- | --- |
-| **Conectar** | Autorização da conta do Instagram, com estado de carregamento |
+| **Conectar** | Autorização da conta via Meta (OAuth) |
 | **Início** | Score Avancy, evolução do alcance, métricas do período, medidores e top posts |
-| **Conteúdo** | Biblioteca de publicações com filtro por formato e ordenação por alcance |
-| **Detalhe** | Métricas da publicação, comparação com a média da conta e leitura da Avancy |
-| **Alertas** | Notificações |
-| **Ajustes** | Perfil, preferências e desconexão da conta |
+| **Conteúdo** | Publicações do período, com filtro por formato e ordenação por alcance |
+| **Detalhe** | Métricas da publicação, comparação com a média da conta e leitura automática |
+| **Alertas** | Avisos derivados dos números |
+| **Ajustes** | Perfil, preferências, origem dos dados e desconexão |
 
-O período (7 / 30 / 90 dias) recalcula score, gráfico, métricas e medidores.
+O seletor de 7 / 30 / 90 dias recalcula tudo, inclusive quais publicações
+entram na lista.
 
-## Estrutura
+## Arquitetura
 
 ```
-index.html                     Casca da página e moldura do aparelho
-assets/css/app.css             Tokens de design e estilos dos componentes
-assets/js/app.js               Estado, dados de exemplo e renderização
-assets/fonts/                  Nunito e Raleway (subsets variáveis, self-hosted)
-assets/avancy-logo-white.svg   Logotipo horizontal
-assets/avancy-mark-beige.svg   Símbolo
-design/Avancy App.dc.html      Fonte original do Claude Design
-design/support.js              Runtime do Claude Design (gerado — não editar)
+server/
+  index.js              Express: estáticos, API, CSP, tratamento de erro
+  config.js             Configuração via ambiente (lê .env sem dependência)
+  session.js            Sessão no servidor; o navegador só recebe um id assinado
+  score.js              Fórmula do Score Avancy
+  auth/meta-oauth.js    Fluxo OAuth da Meta, do code ao token de 60 dias
+  providers/
+    index.js            Escolhe o provider conforme DATA_PROVIDER
+    mock.js             Dados simulados, internamente coerentes
+    instagram.js        Instagram Graph API
+    presenter.js        Formata domínio -> interface (pt-BR, anéis, rótulos)
+  routes/
+    auth.js             /auth/instagram, callback, logout
+    api.js              /api/me, overview, posts, notifications, settings
+
+public/                 O PWA: index.html, CSS, JS, fontes, ícones, sw.js
+design/                 A peça original do Claude Design, como referência
 ```
 
-`index.html` + `assets/` é a implementação e não depende de nada externo: sem
-CDN, sem framework, sem etapa de build. `design/` guarda a peça original como
-referência.
+### Por que existe um backend
 
-### Layout
+Não é possível fazer o OAuth da Meta com segurança a partir de uma página
+estática: o fluxo exige a chave secreta do app, e ela não pode chegar ao
+navegador. Os tokens de acesso ficam só na sessão do servidor — o cliente
+carrega apenas um identificador assinado num cookie `httpOnly`.
 
-Acima de 480px de largura o app aparece dentro de uma moldura de aparelho
-(402×874), como no protótipo. Abaixo disso a moldura some e o app ocupa a tela
-inteira — é assim que ele se comporta em um celular de verdade ou instalado na
-tela de início.
+### Trocar simulado por real
 
-## Dados
+`mock.js` e `instagram.js` implementam o mesmo contrato:
 
-Os números são de exemplo, definidos em `assets/js/app.js`:
+```
+getAccount(session)            -> perfil e total de seguidores
+getAggregates(session, period) -> totais do período atual e do anterior
+getSeries(session, period)     -> buckets do gráfico
+getPosts(session, period)      -> publicações da janela
+getNotifications(session)      -> alertas
+```
 
-- `DATA` — métricas por período (`7`, `30`, `90`)
-- `POSTS` — as publicações da biblioteca
-- `NOTIFICATIONS` — os alertas
-- `ACCOUNT` — nome, @ e iniciais da conta
+Toda a formatação vive em `presenter.js`, fora dos providers. É isso que
+garante que trocar a fonte não muda nada na tela.
 
-Trocar por dados reais é substituir essas constantes pela resposta da API.
+## Score Avancy
 
-## Diferença em relação ao design
+Não é uma métrica da Meta — é da Avancy, e está em `server/score.js`.
+Combina três componentes normalizados para 0–100:
 
-Uma correção foi aplicada na conversão: no comparativo "Alcance" da tela de
-detalhe, o design prefixava um `+` fixo em um número que fica negativo para
-publicações abaixo da média da conta — três das sete publicações exibiam
-`+-48%`. O sinal agora é calculado a partir do valor, e variações negativas
-usam um tom neutro em vez do verde de alta.
+| Componente | Peso | Referência para nota 100 |
+| --- | --- | --- |
+| Alcance | 40% | 5% dos seguidores alcançados por dia |
+| Engajamento | 40% | 10% de interações sobre o alcance |
+| Crescimento | 20% | 0,15% de seguidores novos por dia |
+
+Alcance e crescimento acumulam com o tempo, então suas referências são **por
+dia** e multiplicadas pela duração do período — senão uma janela de 7 dias
+seria julgada contra a régua de 30 e tiraria nota baixa por construção. O
+engajamento é uma razão, e não acumula: a referência é fixa.
+
+Essas referências são a opinião do produto sobre o que é "bom". Valem ser
+calibradas com as contas que a Avancy atende.
+
+## Configuração
+
+Copie `.env.example` para `.env`. Nada é obrigatório em modo simulado.
+
+| Variável | Para quê |
+| --- | --- |
+| `PORT` | Porta do servidor (padrão 3000) |
+| `PUBLIC_URL` | URL pública; precisa bater com o redirecionamento cadastrado na Meta |
+| `SESSION_SECRET` | Assina o cookie de sessão. Sem ele, as sessões caem a cada restart |
+| `DATA_PROVIDER` | `mock` ou `instagram` |
+| `META_APP_ID` / `META_APP_SECRET` | Credenciais da Meta (só no modo `instagram`) |
+| `META_API_VERSION` | Versão da Graph API (padrão `v21.0`) |
+
+## O que ainda não é real
+
+Honestidade sobre o estado atual:
+
+- **Os números são simulados** até o App Review da Meta ser aprovado. O app
+  mostra um aviso em todas as telas enquanto estiver nesse modo.
+- **As sessões vivem em memória.** Reiniciar o servidor desconecta todo mundo,
+  e não funciona com mais de uma instância. `server/session.js` isola isso
+  atrás de get/set/delete — trocar por Redis ou banco é pontual.
+- **Notificações push não existem.** A linha em Ajustes é enfeite; push real
+  exige Web Push com chaves VAPID e um serviço de entrega.
+- **"Relatório mensal por e-mail" também é enfeite.** Não há envio implementado.
+- **Sem testes automatizados.** A verificação até aqui foi manual e por
+  navegação automatizada.
+
+## Limites da API do Instagram
+
+Alguns pontos afetam o que dá para mostrar mesmo com tudo aprovado —
+impressões descontinuadas no nível da conta, `follower_count` limitado a 30
+dias, métricas que variam por tipo de mídia. Estão detalhados em
+[docs/meta-app-setup.md](docs/meta-app-setup.md#o-que-a-api-entrega--e-o-que-não-entrega).

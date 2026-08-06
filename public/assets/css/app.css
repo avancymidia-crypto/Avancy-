@@ -941,6 +941,137 @@ button { font-family: var(--font-body); }
 .btn-ghost:hover { color: var(--text); border-color: rgba(250, 234, 213, 0.28); }
 
 /* --------------------------------------------------------------------------
+   Estados: carregando, erro, avisos
+   -------------------------------------------------------------------------- */
+
+.boot {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.spinner--light {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(247, 241, 232, 0.18);
+  border-top-color: var(--gold);
+}
+
+@keyframes avshimmer {
+  from { background-position: -320px 0; }
+  to { background-position: 320px 0; }
+}
+
+.skeleton {
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    var(--surface) 0%,
+    rgba(250, 234, 213, 0.05) 50%,
+    var(--surface) 100%
+  );
+  background-size: 320px 100%;
+  animation: avshimmer 1.3s linear infinite;
+  border: 1px solid var(--line);
+}
+
+.skeleton--segmented { height: 46px; border-radius: 11px; }
+.skeleton--score { height: 300px; border-radius: 16px; }
+.skeleton--card { height: 210px; border-radius: 16px; }
+.skeleton--tile { height: 92px; }
+.skeleton--row { height: 86px; }
+.skeleton--stat { height: 66px; border-radius: 13px; }
+.skeleton--title { height: 54px; }
+.skeleton--profile { height: 78px; border-radius: 16px; }
+
+.state-block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.state-block__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+}
+.state-block__body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.notice {
+  background: var(--gold-tint);
+  border: 1px solid var(--gold-tint-border);
+  border-radius: 12px;
+  padding: 11px 38px 11px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gold-light);
+  position: relative;
+}
+.notice__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 17px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.notice__close:hover { color: var(--gold-light); }
+
+/* Faixa que deixa explícito que os números não são reais. */
+.databadge {
+  background: rgba(250, 234, 213, 0.05);
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* Variações "para baixo" e "sem base de comparação". */
+.metric__delta--down,
+.gauge__delta--down { color: var(--text-2); background: rgba(250, 234, 213, 0.06); }
+.gauge__delta--down { background: none; }
+.metric__delta--muted,
+.gauge__delta--muted { color: var(--text-4); background: none; font-weight: 400; }
+
+/* Imagens reais vindas da CDN da Meta, quando existirem. */
+.avatar--photo,
+.post__thumb--photo { object-fit: cover; }
+.avatar--photo { display: block; }
+.detail__hero--photo {
+  background-size: cover;
+  background-position: center;
+}
+
+.btn-primary--compact { padding: 13px 18px; font-size: 13.5px; }
+.btn-ghost--link {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-2);
+}
+.btn-ghost--link:hover { color: var(--text); }
+
+/* --------------------------------------------------------------------------
    Tab bar
    -------------------------------------------------------------------------- */
 

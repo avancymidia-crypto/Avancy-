@@ -3,22 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Avancy · app mobile</title>
-<meta name="description" content="Protótipo navegável do app mobile da Avancy — métricas do Instagram da sua conta profissional.">
+<title>Avancy · métricas do Instagram</title>
+<meta name="description" content="Painel de métricas do Instagram para contas profissionais — alcance, engajamento e crescimento da sua conta.">
+
 <meta name="theme-color" content="#0B0805">
-<link rel="icon" href="assets/avancy-mark-beige.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/raleway-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/assets/avancy-mark-beige.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+
+<!-- iOS não lê o manifesto: precisa destas para abrir em tela cheia
+     quando adicionado à tela de início. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Avancy">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preload" href="/assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/raleway-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
 
 <div class="stage">
 
   <header class="stage__head">
-    <img src="assets/avancy-mark-beige.svg" style="height:24px;width:auto" alt="Avancy">
+    <img src="/assets/avancy-mark-beige.svg" style="height:24px;width:auto" alt="Avancy">
     <span class="stage__title">Avancy · app mobile</span>
-    <span class="stage__sub">Protótipo navegável — conta Avancy Mídia</span>
+    <span class="stage__sub">Métricas da sua conta profissional do Instagram</span>
   </header>
 
   <div class="device">
@@ -48,6 +59,6 @@
 
 </div>
 
-<script src="assets/js/app.js"></script>
+<script src="/assets/js/app.js"></script>
 </body>
 </html>
