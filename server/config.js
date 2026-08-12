@@ -65,12 +65,30 @@ function detectPublicUrl() {
 
 const publicUrl = detectPublicUrl().replace(/\/$/, '');
 
+/**
+ * Origens externas autorizadas a consumir a API com cookie de sessão.
+ *
+ * Vazio por padrão: o app serve sua própria interface na mesma origem e não
+ * precisa de CORS. Preencher só quando houver um frontend hospedado em outro
+ * domínio (por exemplo, um projeto no Lovable) chamando esta API.
+ *
+ * Curinga não é aceito de propósito: requisição com credencial exige origem
+ * exata, e `*` faria o navegador recusar o cookie de qualquer forma.
+ */
+const allowedOrigins = (env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 export const config = {
   rootDir,
   port,
   publicUrl,
   isProduction: env.NODE_ENV === 'production',
   dataProvider,
+  allowedOrigins,
+  /** Com frontend em outro domínio, o cookie precisa de SameSite=None. */
+  crossOrigin: allowedOrigins.length > 0,
 
   /** Assina o cookie de sessão. Gerado a cada boot se não for informado —
    *  aceitável em desenvolvimento, mas derruba as sessões a cada restart. */
@@ -111,6 +129,20 @@ export function validateConfig() {
 
   if (config.isProduction && !env.SESSION_SECRET) {
     problems.push('SESSION_SECRET não definido — as sessões caem a cada restart');
+  }
+
+  // SameSite=None só vale acompanhado de Secure, que exige https.
+  if (config.crossOrigin && !config.isProduction) {
+    problems.push(
+      'ALLOWED_ORIGINS definido fora de produção — o cookie cross-site precisa ' +
+      'de Secure/https, então o login não vai funcionar por http'
+    );
+  }
+
+  for (const origin of config.allowedOrigins) {
+    if (!/^https?:\/\/[^/]+$/.test(origin)) {
+      problems.push(`ALLOWED_ORIGINS: "${origin}" não é uma origem válida (esperado https://dominio)`);
+    }
   }
 
   return problems;

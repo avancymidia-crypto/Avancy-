@@ -133,10 +133,13 @@ export function sessionMiddleware(req, res, next) {
     req.session = store.get(cookie.body);
   }
 
+  // Com frontend em outro domínio o navegador só envia o cookie se ele for
+  // SameSite=None, e isso obriga Secure. Sem CORS configurado, fica em Lax,
+  // que é mais restritivo e protege contra CSRF.
   const cookieOptions = {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: config.isProduction,
+    sameSite: config.crossOrigin ? 'none' : 'lax',
+    secure: config.crossOrigin || config.isProduction,
     maxAge: config.sessionTtlMs,
     path: '/'
   };

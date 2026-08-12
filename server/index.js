@@ -20,6 +20,39 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '32kb' }));
+
+/**
+ * CORS para frontends hospedados em outro domínio (um projeto no Lovable, por
+ * exemplo). Desligado enquanto ALLOWED_ORIGINS estiver vazio, que é o caso
+ * quando o app serve a própria interface.
+ *
+ * A origem é devolvida por correspondência exata, nunca com curinga: a
+ * requisição carrega cookie de sessão, e o navegador recusa credencial com
+ * `*`. `Vary: Origin` evita que um cache sirva a resposta de uma origem para
+ * outra.
+ */
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && config.allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+      res.setHeader('Access-Control-Max-Age', '600');
+      return res.sendStatus(204);
+    }
+  } else if (origin && req.method === 'OPTIONS') {
+    // Origem desconhecida: recusa o preflight em vez de deixar passar.
+    return res.sendStatus(403);
+  }
+
+  next();
+});
+
 app.use(sessionMiddleware);
 
 /** Cabeçalhos de segurança. A CSP permite só o que o app realmente usa. */
