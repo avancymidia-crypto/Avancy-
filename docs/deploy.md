@@ -29,6 +29,15 @@ latência menor) ou Railway. Sem hibernação, abre na hora.
 
 ## Render
 
+O caminho de um clique:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/avancymidia-crypto/Avancy-)
+
+Abre o Render já apontado para o repositório, lê o `render.yaml` e propõe o
+serviço pronto. Basta ter conta (grátis) e autorizar o GitHub.
+
+Pelo painel, se preferir:
+
 1. Faça login em [render.com](https://render.com) com a conta do GitHub.
 2. **New → Blueprint** e selecione o repositório `Avancy-`.
 3. O Render lê o `render.yaml` e propõe o serviço. Confirme.

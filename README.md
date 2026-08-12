@@ -40,10 +40,15 @@ mudam, e nada disso fala com o Instagram.
 
 ## Colocando no ar
 
-O repositório já vem configurado para Render (`render.yaml`), Fly.io
-(`fly.toml` + `Dockerfile`) e Railway (`railway.json`). O caminho mais rápido e
-sem custo é o Render, ligado direto ao GitHub. Passo a passo e comparação das
-três em [docs/deploy.md](docs/deploy.md).
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/avancymidia-crypto/Avancy-)
+
+Esse botão abre o Render já apontado para este repositório. Ele lê o
+`render.yaml`, cria o serviço, gera o `SESSION_SECRET` e sobe. É preciso ter
+conta no Render (grátis) e autorizar o acesso ao GitHub.
+
+O repositório também vem configurado para Fly.io (`fly.toml` + `Dockerfile`) e
+Railway (`railway.json`). Passo a passo e comparação das três em
+[docs/deploy.md](docs/deploy.md).
 
 HTTPS não é detalhe: sem ele o navegador não registra o service worker nem
 oferece a instalação. As três plataformas dão certificado de graça.
