@@ -13,6 +13,14 @@ import { authorizeUrl, createState, completeOAuth, MetaAuthError } from '../auth
 
 export const authRouter = express.Router();
 
+/**
+ * Volta para a interface depois do OAuth. Com o frontend noutro domínio,
+ * `/` levaria a pessoa para a raiz do servidor em vez do app.
+ */
+export function backToApp(query = '') {
+  return `${config.frontendUrl}/${query}`;
+}
+
 /** Estados de OAuth pendentes: state -> quando foi criado. */
 const pendingStates = new Map();
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -41,7 +49,7 @@ authRouter.get('/instagram', async (req, res, next) => {
     // Modo simulado: cria a sessão direto, sem sair do app.
     const account = await provider.getAccount();
     req.startSession({ account, connectedAt: Date.now(), simulated: true });
-    return res.redirect('/?connected=1');
+    return res.redirect(backToApp('?connected=1'));
   }
 
   if (!config.meta.appId || !config.meta.appSecret) {
@@ -65,7 +73,7 @@ authRouter.get('/instagram/callback', async (req, res, next) => {
   // O usuário pode ter recusado a autorização.
   if (error) {
     const reason = encodeURIComponent(errorDescription || 'Autorização cancelada.');
-    return res.redirect(`/?error=${reason}`);
+    return res.redirect(backToApp(`?error=${reason}`));
   }
 
   if (!code || !state) {
@@ -91,7 +99,7 @@ authRouter.get('/instagram/callback', async (req, res, next) => {
       simulated: false
     });
 
-    res.redirect('/?connected=1');
+    res.redirect(backToApp('?connected=1'));
   } catch (err) {
     next(err);
   }

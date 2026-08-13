@@ -90,6 +90,16 @@ export const config = {
   /** Com frontend em outro domínio, o cookie precisa de SameSite=None. */
   crossOrigin: allowedOrigins.length > 0,
 
+  /**
+   * Para onde devolver o usuário depois do OAuth.
+   *
+   * Quando a interface vive noutro domínio, terminar o login na raiz DESTE
+   * servidor deixaria a pessoa numa página que não é o app. Sem FRONTEND_URL
+   * definido, cai na primeira origem autorizada — e, não havendo nenhuma,
+   * na própria raiz, que é o caso de quem serve a própria interface.
+   */
+  frontendUrl: (env.FRONTEND_URL || allowedOrigins[0] || '').replace(/\/$/, ''),
+
   /** Assina o cookie de sessão. Gerado a cada boot se não for informado —
    *  aceitável em desenvolvimento, mas derruba as sessões a cada restart. */
   sessionSecret: env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),

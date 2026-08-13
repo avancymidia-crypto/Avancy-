@@ -127,7 +127,7 @@ app.use((error, req, res, _next) => {
     });
   }
 
-  res.redirect(`/?error=${encodeURIComponent(error.message || 'Algo deu errado.')}`);
+  res.redirect(`${config.frontendUrl}/?error=${encodeURIComponent(error.message || 'Algo deu errado.')}`);
 });
 
 const problems = validateConfig();
